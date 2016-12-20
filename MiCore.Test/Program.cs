@@ -7,12 +7,14 @@ namespace Test
     {
         public static void Main(string[] args)
         {
-            Global.Log.Debug("Program.Main", "Test");
-            Global.Log.Info("Program.Main", "Test");
-            Global.Log.Error("Program.Main", "Test");
-            Global.Log.Warn("Program.Main", "Test");
+            Logger.Log.AddDiskService(new Logger.DiskFile($@"Log.{DateTime.Now:yy.MM.dd}.txt"));
 
-            new Bootstrap();
+            Logger.Log.Debug("Program.Main", "Test");
+            Logger.Log.Info("Program.Main", "Test");
+            Logger.Log.Error("Program.Main", "Test");
+            Logger.Log.Warn("Program.Main", "Test");
+
+            Bootstrap.Start();
 
             Console.ReadLine();
         }
