@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("MiCore")]
-[assembly: AssemblyDescription("Shared MiClient Files")]
+[assembly: AssemblyDescription("Shared MiCore Files")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("MiStock")]
