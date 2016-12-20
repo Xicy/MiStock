@@ -1,21 +1,9 @@
 ﻿namespace MiCore
 {
-    public class Global
+    internal class Global
     {
         #region Statics
         public static Global Instance = new Global();
-
-        public static Logger Log = new Logger(
-            new Logger.DiskConsole(
-                Logger.Level.All
-#if !DEBUG
-                    ^ Client.Logger.Level.Debug
-#endif
-            ),
-            new Logger.DiskDatabase(),
-            new Logger.DiskFile()
-            );
-
 
         //Server
         public static string ServerAdress => "127.0.0.1:444";
@@ -54,8 +42,6 @@
             return "";
         }
         #endregion
-
-
 
         public Global()
         {
