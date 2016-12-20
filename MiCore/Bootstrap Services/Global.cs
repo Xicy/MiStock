@@ -20,7 +20,7 @@
 
         private static string WindowsManagementIdentifier(string wmiClass, string wmiProperty)
         {
-            //TODO: CrossPlatform Cpu ID
+            //TODO:CrossPlatform Cpu ID
             /*string result = "";
             var moc = new ManagementClass(wmiClass).GetInstances();
             foreach (var o in moc)

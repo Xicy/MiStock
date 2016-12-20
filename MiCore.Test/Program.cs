@@ -5,6 +5,8 @@ namespace Test
 {
     public class Program
     {
+        //TODO:System.Net.Socket 4.1.0.0 Copy Location 
+
         public static void Main(string[] args)
         {
             Logger.Log.AddDiskService(new Logger.DiskFile($@"Log.{DateTime.Now:yy.MM.dd}.txt"));
