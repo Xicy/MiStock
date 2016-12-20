@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.25920.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiCore", "MiCore\MiCore.csproj", "{82293862-DF62-4BD8-A2D2-E534E93CAE84}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\TestApp.csproj", "{69E99AF9-1316-4767-831F-1C6E0B5CD14A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiCore.Test", "MiCore.Test\MiCore.Test.csproj", "{69E99AF9-1316-4767-831F-1C6E0B5CD14A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,7 +1,7 @@
-﻿using System;
-using MiCore;
+﻿using MiCore;
+using System;
 
-namespace TestApp
+namespace Test
 {
     public class Program
     {
