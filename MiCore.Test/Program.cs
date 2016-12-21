@@ -17,7 +17,7 @@ namespace Test
             Logger.Log.Warn("Program.Main", "Test");
 
             Bootstrap.Start();
-
+            
             Console.ReadLine();
         }
     }
