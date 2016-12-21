@@ -27,7 +27,7 @@ namespace MiCore
     {
         public static void Start()
         {
-            WebServer.Start();
+            SocketTest.Start();
         }
     }
 }

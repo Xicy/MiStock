@@ -48,10 +48,7 @@
     <Compile Include="Log Services\IDiskServices.cs" />
     <Compile Include="Log Services\Logger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Web Services\IWebMethod.cs" />
-    <Compile Include="Web Services\Request.cs" />
-    <Compile Include="Web Services\Response.cs" />
-    <Compile Include="Web Services\WebServer.cs" />
+    <Compile Include="Web Services\SocketTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Database Services\" />
