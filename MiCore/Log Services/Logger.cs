@@ -9,7 +9,7 @@ namespace MiCore
             new DiskConsole(
                 Level.All
 #if !DEBUG
-                    ^ Client.Logger.Level.Debug
+                    ^ Logger.Level.Debug
 #endif
             )
         );
