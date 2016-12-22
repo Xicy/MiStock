@@ -2,7 +2,7 @@
 {
     internal partial class WebSocket
     {
-        public class Request
+        public class Response
         {
 
         }
