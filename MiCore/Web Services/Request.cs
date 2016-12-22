@@ -8,20 +8,18 @@ namespace MiCore
     {
         public class Request
         {
-            private string _data;
-            private Regex regex;
+            private readonly string _data;
+            private readonly Dictionary<string, string> _kvData;
 
-            private Dictionary<string, string> KVData;
-
-            public string Method => KVData["method"];
-            public string Path => KVData["path"].Substring(0, KVData["path"].Length - 9);
-            public string PostData => KVData.ContainsKey("content-length") ? _data.Substring(_data.Length - int.Parse(KVData["content-length"]), int.Parse(KVData["content-length"])) : "";
+            public string Method => _kvData["method"];
+            public string Path => _kvData["path"].Substring(0, _kvData["path"].Length - 9);
+            public string Content => _kvData.ContainsKey("content-length") ? _data.Substring(_data.Length - int.Parse(_kvData["content-length"]), int.Parse(_kvData["content-length"])) : "";
 
             public Request(string data)
             {
-                KVData = new Dictionary<string, string>();
+                _kvData = new Dictionary<string, string>();
                 _data = data;
-                regex = new Regex(@"^(?<Key>.*?):?\s(?<Value>.*?)\r?$", RegexOptions.Multiline);
+                var regex = new Regex(@"^(?<Key>.*?):?\s(?<Value>.*?)\r?$", RegexOptions.Multiline);
                 var matches = regex.Matches(_data);
                 foreach (Match match in matches)
                 {
@@ -31,10 +29,10 @@ namespace MiCore
                         case "post":
                         case "put":
                         case "delete":
-                            KVData.Add("method", match.Groups["Key"].Value.ToLowerInvariant());
-                            KVData.Add("path", match.Groups["Value"].Value);
+                            _kvData.Add("method", match.Groups["Key"].Value.ToLowerInvariant());
+                            _kvData.Add("path", match.Groups["Value"].Value);
                             break;
-                        default: KVData.Add(match.Groups["Key"].Value.ToLowerInvariant(), match.Groups["Value"].Value); break;
+                        default: _kvData.Add(match.Groups["Key"].Value.ToLowerInvariant(), match.Groups["Value"].Value); break;
                     }
                 }
             }

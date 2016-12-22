@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace MiCore
 {
@@ -13,39 +14,51 @@ namespace MiCore
         //TODO:Cancel Token Add
 
         private const string SourceName = "MiCore.SocketTest";
-        private static IDictionary<string, IWebModule> _modules;
-        private const int ByteCount = 1024 * 64;//8 Byte
+        private static IList<IWebModule> _modules;
+        private const int ByteCount = 1024 * 64; //8 Byte
 
-        public static async void Start()
+        public static void Start()
         {
-            _modules = await LoadModules();
-            StartListenerAsync();
+            try
+            {
+                _modules = LoadModules().ToList();
+                StartListenerAsync();
+            }
+            catch (Exception e)
+            {
+                Logger.Log.Error(SourceName, e);
+            }
         }
 
-        private static async Task<IDictionary<string, IWebModule>> LoadModules()
+        private static IEnumerable<IWebModule> LoadModules()
         {
-            //TODO:Assembly Modules load
-            var ret = new Dictionary<string, IWebModule> { { "^[/]$", new TestModule() } };
-            return ret;
+            var ass = typeof(WebSocket).GetTypeInfo().Assembly;
+            foreach (var exportedType in ass.DefinedTypes)
+            {
+                if (!exportedType.IsInterface && exportedType.ImplementedInterfaces.Any(type => type == typeof(IWebModule)) && exportedType.AsType() != typeof(NotFoundModule))
+                {
+                    yield return Activator.CreateInstance(exportedType.AsType()) as IWebModule;
+                }
+            }
         }
 
         private static IWebModule GetModule(string regex)
         {
             foreach (var module in _modules)
             {
-                if (new Regex(module.Key).Match(regex).Success)
+                if (new Regex(module.RegexPath).Match(regex).Success)
                 {
-                    return module.Value;
+                    return module;
                 }
             }
-            return null;
+            return new NotFoundModule();
         }
 
         private static async void StartListenerAsync()
         {
             var tcpListener = new TcpListener(IPAddress.Any, 8080);
+            var address = (IPEndPoint)tcpListener.LocalEndpoint;
 
-            IPEndPoint address = (IPEndPoint)tcpListener.LocalEndpoint;
             tcpListener.Start();
 
             Logger.Log.Info(SourceName, $"Started on {address.Address}:{address.Port}");
@@ -64,15 +77,7 @@ namespace MiCore
                     Logger.Log.Debug(SourceName, "Client({0}) wrote \n{1}", address.Address, request);
 
                     var module = GetModule(request.Path);
-
-                    Response response;
-                    switch (request.Method)
-                    {
-                        case "post": response = module.Post(request); break;
-                        default: response = module.Get(request); break;
-                    }
-
-                    var serverResponseBytes = response.ResponseData;
+                    var serverResponseBytes = module.Execute(request).ResponseData;
 
                     await networkStream.WriteAsync(serverResponseBytes, 0, serverResponseBytes.Length);
                     Logger.Log.Info(SourceName, "Response has been written");

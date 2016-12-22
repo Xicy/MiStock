@@ -4,8 +4,8 @@
     {
         public interface IWebModule
         {
-            Response Get(Request request);
-            Response Post(Request request);
+            string RegexPath { get; }
+            Response Execute(Request request);
         }
     }
 }
