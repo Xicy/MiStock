@@ -14,7 +14,7 @@ namespace MiCore
 
         private const string SourceName = "MiCore.SocketTest";
         private static IDictionary<string, IWebModule> _modules;
-        private const int ByteCount = 1024 * 1024;//1KB
+        private const int ByteCount = 1024 * 64;//8 Byte
 
         public static async void Start()
         {
@@ -43,11 +43,12 @@ namespace MiCore
 
         private static async void StartListenerAsync()
         {
-            var tcpListener = new TcpListener(IPAddress.Any, 0);
-            var address = ((IPEndPoint)tcpListener.LocalEndpoint);
+            var tcpListener = new TcpListener(IPAddress.Any, 8080);
+
+            IPEndPoint address = (IPEndPoint)tcpListener.LocalEndpoint;
             tcpListener.Start();
 
-            Logger.Log.Info(SourceName, $"Started on {address.Address}:{((IPEndPoint)tcpListener.LocalEndpoint).Port}");
+            Logger.Log.Info(SourceName, $"Started on {address.Address}:{address.Port}");
             while (true)
             {
                 var tcpClient = await tcpListener.AcceptTcpClientAsync();
@@ -59,11 +60,17 @@ namespace MiCore
                     Logger.Log.Info(SourceName, "Reading from client({0})", address.Address);
                     var byteCount = await networkStream.ReadAsync(buffer, 0, buffer.Length);
 
-                    var req = new Request(Encoding.UTF8.GetString(buffer, 0, byteCount));
-                    Logger.Log.Debug(SourceName, "Client({0}) wrote \n{1}", address.Address, req);
+                    var request = new Request(Encoding.UTF8.GetString(buffer, 0, byteCount));
+                    Logger.Log.Debug(SourceName, "Client({0}) wrote \n{1}", address.Address, request);
 
-                    var module = GetModule(req.Path ?? "/");
-                    var response = module.Get(req);//TODO:Decide Get OR Post
+                    var module = GetModule(request.Path);
+
+                    Response response;
+                    switch (request.Method)
+                    {
+                        case "post": response = module.Post(request); break;
+                        default: response = module.Get(request); break;
+                    }
 
                     var serverResponseBytes = response.ResponseData;
 

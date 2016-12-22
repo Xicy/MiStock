@@ -24,7 +24,6 @@ namespace MiCore
      *  
      *  Response & Request
      *   -Parser 
-     *   
      */
 
     public class Bootstrap
