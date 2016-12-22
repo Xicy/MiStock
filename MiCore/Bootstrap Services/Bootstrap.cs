@@ -21,6 +21,10 @@ namespace MiCore
      * Create WebServer
      *  -Check files from database if not exist request from Server
      *  -Listen for request 
+     *  
+     *  Response & Request
+     *   -Parser 
+     *   
      */
 
     public class Bootstrap
