@@ -9,15 +9,15 @@ namespace MiCore
         public class Request
         {
             private readonly string _data;
-            private readonly Dictionary<string, string> _kvData;
 
-            public string Method => _kvData["method"];
-            public string Path => _kvData["path"].Substring(0, _kvData["path"].Length - 9);
-            public string Content => _kvData.ContainsKey("content-length") ? _data.Substring(_data.Length - int.Parse(_kvData["content-length"]), int.Parse(_kvData["content-length"])) : "";
+            public readonly Dictionary<string, string> Data;
+            public string Method => Data["method"];
+            public string Path => Data["path"].Substring(0, Data["path"].Length - 9);
+            public string Content => Data.ContainsKey("content-length") ? _data.Substring(_data.Length - int.Parse(Data["content-length"]), int.Parse(Data["content-length"])) : "";
 
             public Request(string data)
             {
-                _kvData = new Dictionary<string, string>();
+                Data = new Dictionary<string, string>();
                 _data = data;
                 var regex = new Regex(@"^(?<Key>.*?):?\s(?<Value>.*?)\r?$", RegexOptions.Multiline);
                 var matches = regex.Matches(_data);
@@ -29,10 +29,10 @@ namespace MiCore
                         case "post":
                         case "put":
                         case "delete":
-                            _kvData.Add("method", match.Groups["Key"].Value.ToLowerInvariant());
-                            _kvData.Add("path", match.Groups["Value"].Value);
+                            Data.Add("method", match.Groups["Key"].Value.ToLowerInvariant());
+                            Data.Add("path", match.Groups["Value"].Value);
                             break;
-                        default: _kvData.Add(match.Groups["Key"].Value.ToLowerInvariant(), match.Groups["Value"].Value); break;
+                        default: Data.Add(match.Groups["Key"].Value.ToLowerInvariant(), match.Groups["Value"].Value); break;
                     }
                 }
             }
