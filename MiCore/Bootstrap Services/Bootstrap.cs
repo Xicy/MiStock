@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 namespace MiCore
 {
     /* Log system
@@ -30,7 +32,14 @@ namespace MiCore
     {
         public static void Start()
         {
-            WebSocket.Start();
+            try
+            {
+                WebSocket.Start();
+            }
+            catch (Exception e)
+            {
+                Logger.Log.Error("MiCore.Bootstrap", e);
+            }
         }
     }
 }
