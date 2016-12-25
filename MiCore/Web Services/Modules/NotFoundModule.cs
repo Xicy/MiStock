@@ -7,7 +7,7 @@
             public string RegexPath => "";
             public Response Execute(Request request)
             {
-                return new Response();
+                return new Response(404);
             }
         }
     }
