@@ -14,12 +14,14 @@ namespace MiCore
     {
         //TODO:Cancel Token Add
 
-        private const string SourceName = "MiCore.SocketTest";
+        private const string SourceName = "MiCore.WebSocket";
         private static IEnumerable<IWebModule> _modules;
         private const int ByteCount = 1024 * 64; //8 Byte
         private static TcpListener _tcpListener;
 
+#pragma warning disable IDE1006 // Naming Styles
         public static async void Start()
+#pragma warning restore IDE1006 // Naming Styles
         {
             try
             {
