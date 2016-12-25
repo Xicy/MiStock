@@ -157,7 +157,9 @@ namespace MiCore
             public static Response ResponseFromFile(FileStream fileStream)
             {
                 throw new Exception("Not Workink Now");
+#pragma warning disable 162
                 return new Response(200, new StreamReader(fileStream, Encoding.UTF8).ReadToEnd(), Path.GetExtension(fileStream.Name));
+#pragma warning restore 162
             }
 
             public Response(short statusCode = 200, string content = "", string _contentFileExtention = ".html")
