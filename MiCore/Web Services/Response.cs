@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace MiCore
@@ -8,8 +11,9 @@ namespace MiCore
     {
         public class Response
         {
-            #region StatusCodes
-            private static Dictionary<short, string> StatusCodeData = new Dictionary<short, string>() {
+
+            private static readonly Dictionary<short, string> statusCodeData = new Dictionary<short, string> {
+                #region StatusCodes
                 { 100,"100 Continue"},
                 {101,"101 Switching Protocols"},
                 {102,"102 Processing"},
@@ -73,24 +77,118 @@ namespace MiCore
                 {510,"510 Not Extended"},
                 {511,"511 Network Authentication Required"},
                 {599,"599 Network Connect Timeout Error"}
+                #endregion
             };
-            #endregion
 
-            private string _return;
+            private static IDictionary<string, string> mimeTypeMappings = new Dictionary<string, string> { 
+                #region MIME type list
+        {".asf", "video/x-ms-asf"},
+        {".asx", "video/x-ms-asf"},
+        {".avi", "video/x-msvideo"},
+        {".bin", "application/octet-stream"},
+        {".cco", "application/x-cocoa"},
+        {".crt", "application/x-x509-ca-cert"},
+        {".css", "text/css"},
+        {".deb", "application/octet-stream"},
+        {".der", "application/x-x509-ca-cert"},
+        {".dll", "application/octet-stream"},
+        {".dmg", "application/octet-stream"},
+        {".ear", "application/java-archive"},
+        {".eot", "application/octet-stream"},
+        {".exe", "application/octet-stream"},
+        {".flv", "video/x-flv"},
+        {".gif", "image/gif"},
+        {".hqx", "application/mac-binhex40"},
+        {".htc", "text/x-component"},
+        {".htm", "text/html"},
+        {".html", "text/html"},
+        {".ico", "image/x-icon"},
+        {".img", "application/octet-stream"},
+        {".iso", "application/octet-stream"},
+        {".jar", "application/java-archive"},
+        {".jardiff", "application/x-java-archive-diff"},
+        {".jng", "image/x-jng"},
+        {".jnlp", "application/x-java-jnlp-file"},
+        {".jpeg", "image/jpeg"},
+        {".jpg", "image/jpeg"},
+        {".js", "application/x-javascript"},
+        {".mml", "text/mathml"},
+        {".mng", "video/x-mng"},
+        {".mov", "video/quicktime"},
+        {".mp3", "audio/mpeg"},
+        {".mpeg", "video/mpeg"},
+        {".mpg", "video/mpeg"},
+        {".msi", "application/octet-stream"},
+        {".msm", "application/octet-stream"},
+        {".msp", "application/octet-stream"},
+        {".pdb", "application/x-pilot"},
+        {".pdf", "application/pdf"},
+        {".pem", "application/x-x509-ca-cert"},
+        {".pl", "application/x-perl"},
+        {".pm", "application/x-perl"},
+        {".png", "image/png"},
+        {".prc", "application/x-pilot"},
+        {".ra", "audio/x-realaudio"},
+        {".rar", "application/x-rar-compressed"},
+        {".rpm", "application/x-redhat-package-manager"},
+        {".rss", "text/xml"},
+        {".run", "application/x-makeself"},
+        {".sea", "application/x-sea"},
+        {".shtml", "text/html"},
+        {".sit", "application/x-stuffit"},
+        {".swf", "application/x-shockwave-flash"},
+        {".tcl", "application/x-tcl"},
+        {".tk", "application/x-tcl"},
+        {".txt", "text/plain"},
+        {".war", "application/java-archive"},
+        {".wbmp", "image/vnd.wap.wbmp"},
+        {".wmv", "video/x-ms-wmv"},
+        {".xml", "text/xml"},
+        {".xpi", "application/x-xpinstall"},
+        {".zip", "application/zip"},
+        #endregion
+            };
 
-            public Response()
+            public string Content;
+            public string ContentFileExtention;
+            public short StatusCode;
+            private Dictionary<string, string> ResponseHeader;
+
+            public static Response ResponseFromFile(FileStream fileStream)
             {
-                _return = $"HTTP/1.1 {StatusCodeData[StatusCode]}\r\nDate: {DateTime.Now:r}\r\nServer: {typeof(Bootstrap).Namespace}\r\nLast-Modified: {DateTime.Now:r}\r\nContent-Length: {_returnBin.Length}\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n{_returnBin}";
+                throw new Exception("Not Workink Now");
+                return new Response(200, new StreamReader(fileStream, Encoding.UTF8).ReadToEnd(), Path.GetExtension(fileStream.Name));
+            }
 
+            public Response(short statusCode = 200, string content = "", string _contentFileExtention = ".html")
+            {
+                StatusCode = statusCode;
+                Content = content;
+                ContentFileExtention = _contentFileExtention;
+                ResponseHeader = new Dictionary<string, string>
+                {
+                    {$"HTTP/1.1 {statusCodeData[StatusCode]}", null },
+                    {"Date", DateTime.Now.ToString("r")},
+                    {"Last-Modified", DateTime.Now.ToString("r")},
+                    {"Server",  typeof(Bootstrap).Namespace},
+                };
             }
 
             //TODO:Response
-            public byte[] ResponseData => Encoding.UTF8.GetBytes(_return);
-            public short StatusCode;
+            public byte[] ResponseData()
+            {
+                if (Content.Length > 0)
+                {
+                    ResponseHeader.Add("Content-Type", mimeTypeMappings.ContainsKey(ContentFileExtention) ? mimeTypeMappings[ContentFileExtention] : "application/octet-stream");
+                    ResponseHeader.Add("Content-Length", Content.Length.ToString());
+                    ResponseHeader.Add("Connection", "Closed");
+                    ResponseHeader.Add($"\r\n{Content}", null);
+                }
 
-            private static string _returnBin =
-                "<!DOCTYPE html>\r\n<html>\r\n<body>\r\n\r\n<h1>My First Heading</h1>\r\n<p>My first paragraph.</p>\r\n\r\n</body>\r\n</html>";
-
+                return Encoding.UTF8.GetBytes(ResponseHeader.Aggregate("",
+                        (current, header) =>
+                            current + header.Key + (header.Value != null ? $":{header.Value}" : "") + "\r\n"));
+            }
         }
     }
 }
