@@ -42,7 +42,7 @@ namespace MiCore
                 }
                 else if (data is Exception)
                 {
-                    write = ((Exception)data).Message;
+                    write = string.Format("{0}\r\n{1}", ((Exception) data).Message, ((Exception) data).StackTrace);
                 }
                 else throw new ArgumentOutOfRangeException(nameof(data), data, "data type do not support");
 
