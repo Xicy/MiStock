@@ -12,7 +12,7 @@ namespace MiCore
         public class Response
         {
 
-            private static readonly Dictionary<short, string> statusCodeData = new Dictionary<short, string> {
+            private static readonly Dictionary<short, string> StatusCodeData = new Dictionary<short, string> {
                 #region StatusCodes
                 { 100,"100 Continue"},
                 {101,"101 Switching Protocols"},
@@ -80,7 +80,7 @@ namespace MiCore
                 #endregion
             };
 
-            private static IDictionary<string, string> mimeTypeMappings = new Dictionary<string, string> { 
+            private static readonly IDictionary<string, string> MimeTypeMapData = new Dictionary<string, string> { 
                 #region MIME type list
         {".asf", "video/x-ms-asf"},
         {".asx", "video/x-ms-asf"},
@@ -149,27 +149,44 @@ namespace MiCore
         #endregion
             };
 
-            public string Content;
+            public byte[] Content;
             public string ContentFileExtention;
             public short StatusCode;
             private Dictionary<string, string> ResponseHeader;
 
-            public static Response ResponseFromFile(FileStream fileStream)
+            public Response(short statusCode)
             {
-                throw new Exception("Not Workink Now");
-#pragma warning disable 162
-                return new Response(200, new StreamReader(fileStream, Encoding.UTF8).ReadToEnd(), Path.GetExtension(fileStream.Name));
-#pragma warning restore 162
+                Initalize(statusCode, null, null);
             }
 
-            public Response(short statusCode = 200, string content = "", string _contentFileExtention = ".html")
+            public Response(FileStream fileStream)
+            {
+                Initalize(200, new BinaryReader(fileStream).ReadBytes((int)fileStream.Length), Path.GetExtension(fileStream.Name));
+            }
+
+            public Response(short statusCode, FileStream fileStream)
+            {
+                Initalize(statusCode, new BinaryReader(fileStream).ReadBytes((int)fileStream.Length), Path.GetExtension(fileStream.Name));
+            }
+
+            public Response(short statusCode, byte[] content, string contentFileExtention)
+            {
+                Initalize(statusCode, content, contentFileExtention);
+            }
+
+            public Response(byte[] content, string contentFileExtention)
+            {
+                Initalize(200, content, contentFileExtention);
+            }
+
+            private void Initalize(short statusCode, byte[] content, string contentFileExtention)
             {
                 StatusCode = statusCode;
                 Content = content;
-                ContentFileExtention = _contentFileExtention;
+                ContentFileExtention = contentFileExtention;
                 ResponseHeader = new Dictionary<string, string>
                 {
-                    {$"HTTP/1.1 {statusCodeData[StatusCode]}", null },
+                    {$"HTTP/1.1 {StatusCodeData[StatusCode]}", null },
                     {"Date", DateTime.Now.ToString("r")},
                     {"Last-Modified", DateTime.Now.ToString("r")},
                     {"Server",  typeof(Bootstrap).Namespace},
@@ -179,17 +196,21 @@ namespace MiCore
             //TODO:Response
             public byte[] ResponseData()
             {
-                if (Content.Length > 0)
+                if (Content != null && Content.Length > 0)
                 {
-                    ResponseHeader.Add("Content-Type", mimeTypeMappings.ContainsKey(ContentFileExtention) ? mimeTypeMappings[ContentFileExtention] : "application/octet-stream");
+                    ResponseHeader.Add("Content-Type", MimeTypeMapData.ContainsKey(ContentFileExtention) ? MimeTypeMapData[ContentFileExtention] : "application/octet-stream");
                     ResponseHeader.Add("Content-Length", Content.Length.ToString());
-                    ResponseHeader.Add("Connection", "Closed");
-                    ResponseHeader.Add($"\r\n{Content}", null);
+                }
+                ResponseHeader.Add("Connection", "Closed");
+
+                IEnumerable<byte> retBytes = Encoding.UTF8.GetBytes(ResponseHeader.Aggregate("", (current, header) => current + header.Key + (header.Value != null ? $":{header.Value}" : "") + "\r\n"));
+
+                if (Content != null && Content.Length > 0)
+                {
+                    retBytes = retBytes.Concat(Encoding.UTF8.GetBytes("\r\n")).Concat(Content);
                 }
 
-                return Encoding.UTF8.GetBytes(ResponseHeader.Aggregate("",
-                        (current, header) =>
-                            current + header.Key + (header.Value != null ? $":{header.Value}" : "") + "\r\n"));
+                return retBytes.ToArray();
             }
         }
     }
