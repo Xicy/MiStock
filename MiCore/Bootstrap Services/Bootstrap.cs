@@ -34,7 +34,10 @@ namespace MiCore
         {
             try
             {
-                WebSocket.Start();
+                var Server1 = new WebSocket(8080);
+                var Server2 = new WebSocket(8081);
+                Server1.StartAsync();
+                Server2.StartAsync();
             }
             catch (Exception e)
             {
