@@ -6,6 +6,7 @@ namespace MiCore
     {
         public class DiskConsole : IDiskServices
         {
+            private static int MaxCharLenght = 500;
             private readonly object _lock = new object();
 
             private readonly Level _visibiltLevel;
@@ -27,7 +28,7 @@ namespace MiCore
                         case Logger.Level.Warn: Console.ForegroundColor = ConsoleColor.Yellow; break;
                         case Logger.Level.Error: Console.ForegroundColor = ConsoleColor.Red; break;
                     }
-                    Console.Write("[{0}] [{1}] [{2}] {3}{4}".Replace(' ', '\t'), DateTime.Now, level, source, data, Environment.NewLine);
+                    Console.Write("[{0}] [{1}] [{2}] {3}{4}".Replace(' ', '\t'), DateTime.Now, level, source, data.Substring(0,Math.Min(MaxCharLenght, data.Length)), Environment.NewLine);
                     Console.ForegroundColor = tempColor;
                 }
             }
