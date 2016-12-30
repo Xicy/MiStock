@@ -12,22 +12,64 @@ namespace MiCore
 {
     internal partial class WebSocket
     {
-        //TODO:Cancel Token Add
-
         private const string SourceName = "MiCore.WebSocket";
-        private static IEnumerable<IWebModule> _modules;
         private const int ByteCount = 1024 * 64; //8 Byte
-        private static TcpListener _tcpListener;
 
-#pragma warning disable IDE1006 // Naming Styles
-        public static async void Start()
-#pragma warning restore IDE1006 // Naming Styles
+        #region ModuleLoader
+        private static List<IWebModule> _modules;
+        private static IEnumerable<IWebModule> Modules
+        {
+            get
+            {
+                if (_modules != null) return _modules;
+                _modules = new List<IWebModule>();
+                var ass = typeof(WebSocket).GetTypeInfo().Assembly;
+                foreach (var exportedType in ass.DefinedTypes)
+                {
+                    if (!exportedType.IsInterface && exportedType.ImplementedInterfaces.Any(type => type == typeof(IWebModule)) && exportedType.AsType() != typeof(NotFoundModule))
+                    {
+                        _modules.Add(Activator.CreateInstance(exportedType.AsType()) as IWebModule);
+                    }
+                }
+                return _modules;
+            }
+        }
+        private static IWebModule GetModule(string regex)
+        {
+            foreach (var module in Modules)
+            {
+                if (new Regex(module.RegexPath).Match(regex).Success)
+                {
+                    return module;
+                }
+            }
+            return new NotFoundModule();
+        }
+        #endregion
+
+        private bool _working;
+        private TcpListener _tcpListener;
+        private readonly IPAddress _ip;
+        private readonly int _port;
+
+        public WebSocket(IPEndPoint ipEp) : this(ipEp.Address, ipEp.Port) { }
+        public WebSocket(int port) : this(IPAddress.Any, port) { }
+        public WebSocket(IPAddress ip, int port)
+        {
+            _ip = ip;
+            _port = port;
+        }
+
+        public void Start()
+        {
+            StartAsync().Wait();
+        }
+        public async Task StartAsync()
         {
             try
             {
-                _modules = LoadModules();
-
-                _tcpListener = new TcpListener(IPAddress.Any, 8080);
+                _working = true;
+                _tcpListener = new TcpListener(_ip, _port);
                 var serverAddress = (IPEndPoint)_tcpListener.LocalEndpoint;
 
                 _tcpListener.Start();
@@ -41,64 +83,40 @@ namespace MiCore
             }
         }
 
-
-        private static IEnumerable<IWebModule> LoadModules()
+        public void Stop()
         {
-            var ass = typeof(WebSocket).GetTypeInfo().Assembly;
-            foreach (var exportedType in ass.DefinedTypes)
-            {
-                if (!exportedType.IsInterface && exportedType.ImplementedInterfaces.Any(type => type == typeof(IWebModule)) && exportedType.AsType() != typeof(NotFoundModule))
-                {
-                    yield return Activator.CreateInstance(exportedType.AsType()) as IWebModule;
-                }
-            }
+            _working = false;
+            _tcpListener.Stop();
         }
 
-        private static IWebModule GetModule(string regex)
+        private async Task ListenAsync()
         {
-            foreach (var module in _modules)
+            while (_working)
             {
-                if (new Regex(module.RegexPath).Match(regex).Success)
-                {
-                    return module;
-                }
-            }
-            return new NotFoundModule();
-        }
+                var tcpClient = await _tcpListener.AcceptTcpClientAsync();
+                var clientAddress = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
+                Logger.Log.Info(SourceName, "Client({0}) has connected", clientAddress.Address);
 
-        private static async Task ListenAsync()
-        {
-            try
-            {
-                while (true)
+                try
                 {
-                    var tcpClient = await _tcpListener.AcceptTcpClientAsync();
-                    var clientAddress = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
-                    Logger.Log.Info(SourceName, "Client({0}) has connected", clientAddress.Address);
-
                     using (var networkStream = tcpClient.GetStream())
                     {
                         var buffer = new byte[ByteCount];
                         Logger.Log.Info(SourceName, "Reading from client({0})", clientAddress.Address);
                         var byteCount = await networkStream.ReadAsync(buffer, 0, buffer.Length);
-
+                        
                         var request = new Request(Encoding.UTF8.GetString(buffer, 0, byteCount));
                         Logger.Log.Debug(SourceName, "Client({0}) wrote \n{1}", clientAddress.Address, request);
 
-                        var module = GetModule(request.Path);
-                        var serverResponseBytes = module.Execute(request).ResponseData();
+                        var serverResponseBytes = GetModule(request.Path).Execute(this, request).ResponseData();
 
                         await networkStream.WriteAsync(serverResponseBytes, 0, serverResponseBytes.Length);
-                        Logger.Log.Info(SourceName, "Response has been written");
                     }
-
                 }
-
-            }
-            catch (Exception e)
-            {
-                Logger.Log.Error(SourceName, e);
-                await ListenAsync();
+                catch (Exception e)
+                {
+                    Logger.Log.Error(SourceName, "Client({0}) \n{1}", clientAddress.Address, e);
+                }
             }
         }
     }
