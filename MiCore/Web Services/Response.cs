@@ -152,7 +152,7 @@ namespace MiCore
             public byte[] Content;
             public string ContentFileExtention;
             public short StatusCode;
-            private Dictionary<string, string> ResponseHeader;
+            private Dictionary<string, string> _responseHeader;
 
             public Response(short statusCode)
             {
@@ -161,12 +161,18 @@ namespace MiCore
 
             public Response(FileStream fileStream)
             {
-                Initalize(200, new BinaryReader(fileStream).ReadBytes((int)fileStream.Length), Path.GetExtension(fileStream.Name));
+                using (var bin = new BinaryReader(fileStream))
+                {
+                    Initalize(200, bin.ReadBytes((int)bin.BaseStream.Length), Path.GetExtension(fileStream.Name));
+                }
             }
 
             public Response(short statusCode, FileStream fileStream)
             {
-                Initalize(statusCode, new BinaryReader(fileStream).ReadBytes((int)fileStream.Length), Path.GetExtension(fileStream.Name));
+                using (var bin = new BinaryReader(fileStream))
+                {
+                    Initalize(statusCode, bin.ReadBytes((int)bin.BaseStream.Length), Path.GetExtension(fileStream.Name));
+                }
             }
 
             public Response(short statusCode, byte[] content, string contentFileExtention)
@@ -184,7 +190,7 @@ namespace MiCore
                 StatusCode = statusCode;
                 Content = content;
                 ContentFileExtention = contentFileExtention;
-                ResponseHeader = new Dictionary<string, string>
+                _responseHeader = new Dictionary<string, string>
                 {
                     {$"HTTP/1.1 {StatusCodeData[StatusCode]}", null },
                     {"Date", DateTime.Now.ToString("r")},
@@ -198,12 +204,12 @@ namespace MiCore
             {
                 if (Content != null && Content.Length > 0)
                 {
-                    ResponseHeader.Add("Content-Type", MimeTypeMapData.ContainsKey(ContentFileExtention) ? MimeTypeMapData[ContentFileExtention] : "application/octet-stream");
-                    ResponseHeader.Add("Content-Length", Content.Length.ToString());
+                    _responseHeader.Add("Content-Type", MimeTypeMapData.ContainsKey(ContentFileExtention) ? MimeTypeMapData[ContentFileExtention] : "application/octet-stream");
+                    _responseHeader.Add("Content-Length", Content.Length.ToString());
                 }
-                ResponseHeader.Add("Connection", "Closed");
+                _responseHeader.Add("Connection", "Closed");
 
-                IEnumerable<byte> retBytes = Encoding.UTF8.GetBytes(ResponseHeader.Aggregate("", (current, header) => current + header.Key + (header.Value != null ? $":{header.Value}" : "") + "\r\n"));
+                IEnumerable<byte> retBytes = Encoding.UTF8.GetBytes(_responseHeader.Aggregate("", (current, header) => current + header.Key + (header.Value != null ? $":{header.Value}" : "") + "\r\n"));
 
                 if (Content != null && Content.Length > 0)
                 {
