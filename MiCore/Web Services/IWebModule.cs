@@ -7,7 +7,6 @@ namespace MiCore
         public interface IWebModule
         {
             string RegexPath { get; }
-
             Response Execute(WebSocket socket, Request request);
         }
     }

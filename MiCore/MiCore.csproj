@@ -49,6 +49,7 @@
     <Compile Include="Log Services\Logger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Web Services\IWebModule.cs" />
+    <Compile Include="Web Services\Modules\StopModule.cs" />
     <Compile Include="Web Services\Modules\NotFoundModule.cs" />
     <Compile Include="Web Services\Modules\IndexModule.cs" />
     <Compile Include="Web Services\Response.cs" />
