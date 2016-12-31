@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,9 +13,9 @@ namespace MiCore
         public class Response
         {
 
-            private static readonly Dictionary<short, string> StatusCodeData = new Dictionary<short, string> {
+            private static readonly IDictionary<short, string> StatusCodeData = new Dictionary<short, string> {
                 #region StatusCodes
-                { 100,"100 Continue"},
+                {100,"100 Continue"},
                 {101,"101 Switching Protocols"},
                 {102,"102 Processing"},
                 {200,"200 OK"},
@@ -85,17 +86,11 @@ namespace MiCore
         {".asf", "video/x-ms-asf"},
         {".asx", "video/x-ms-asf"},
         {".avi", "video/x-msvideo"},
-        {".bin", "application/octet-stream"},
         {".cco", "application/x-cocoa"},
         {".crt", "application/x-x509-ca-cert"},
         {".css", "text/css"},
-        {".deb", "application/octet-stream"},
         {".der", "application/x-x509-ca-cert"},
-        {".dll", "application/octet-stream"},
-        {".dmg", "application/octet-stream"},
         {".ear", "application/java-archive"},
-        {".eot", "application/octet-stream"},
-        {".exe", "application/octet-stream"},
         {".flv", "video/x-flv"},
         {".gif", "image/gif"},
         {".hqx", "application/mac-binhex40"},
@@ -103,8 +98,6 @@ namespace MiCore
         {".htm", "text/html"},
         {".html", "text/html"},
         {".ico", "image/x-icon"},
-        {".img", "application/octet-stream"},
-        {".iso", "application/octet-stream"},
         {".jar", "application/java-archive"},
         {".jardiff", "application/x-java-archive-diff"},
         {".jng", "image/x-jng"},
@@ -118,9 +111,6 @@ namespace MiCore
         {".mp3", "audio/mpeg"},
         {".mpeg", "video/mpeg"},
         {".mpg", "video/mpeg"},
-        {".msi", "application/octet-stream"},
-        {".msm", "application/octet-stream"},
-        {".msp", "application/octet-stream"},
         {".pdb", "application/x-pilot"},
         {".pdf", "application/pdf"},
         {".pem", "application/x-x509-ca-cert"},
@@ -152,7 +142,8 @@ namespace MiCore
             public byte[] Content;
             public string ContentFileExtention;
             public short StatusCode;
-            private Dictionary<string, string> _responseHeader;
+            private IDictionary<string, string> _responseHeader;
+            private IDictionary<string, string> _cookieForHeader;
 
             public Response(short statusCode)
             {
@@ -190,16 +181,21 @@ namespace MiCore
                 StatusCode = statusCode;
                 Content = content;
                 ContentFileExtention = contentFileExtention;
+                _cookieForHeader = new Dictionary<string, string>
+                {
+                    {"LSID=DQAAAK…Eaem_vYg","Path =/ accounts; Expires = Wed, 13 Jan 2021 22:23:01 GMT; Secure; HttpOnly" }
+                };
                 _responseHeader = new Dictionary<string, string>
                 {
-                    {$"HTTP/1.1 {StatusCodeData[StatusCode]}", null },
+                    {$"HTTP/1.1 {(StatusCodeData.ContainsKey(StatusCode) ? StatusCodeData[StatusCode] : StatusCode.ToString())}", null },
                     {"Date", DateTime.Now.ToString("r")},
                     {"Last-Modified", DateTime.Now.ToString("r")},
                     {"Server",  typeof(Bootstrap).Namespace},
+                    {"Access-Control-Allow-Origin","*" }
                 };
             }
 
-            //TODO:Response
+            //TODO:Response - Add header - add and remove cookie
             public byte[] ResponseData()
             {
                 if (Content != null && Content.Length > 0)
