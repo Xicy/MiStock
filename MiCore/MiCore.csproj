@@ -49,7 +49,8 @@
     <Compile Include="Log Services\IDiskServices.cs" />
     <Compile Include="Log Services\Logger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Web Services\Cookie.cs" />
+    <Compile Include="Web Services\Cookie\CookieContainer.cs" />
+    <Compile Include="Web Services\Cookie\CookieCollection.cs" />
     <Compile Include="Web Services\IWebModule.cs" />
     <Compile Include="Web Services\Modules\StopModule.cs" />
     <Compile Include="Web Services\Modules\NotFoundModule.cs" />

@@ -143,7 +143,7 @@ namespace MiCore
             public string ContentFileExtention;
             public short StatusCode;
             private IDictionary<string, string> _responseHeader;
-            private IDictionary<string, string> _cookieForHeader;
+            //private IDictionary<CookieContainer> _cookieForHeader;
 
             public Response(short statusCode)
             {
@@ -181,10 +181,12 @@ namespace MiCore
                 StatusCode = statusCode;
                 Content = content;
                 ContentFileExtention = contentFileExtention;
-                _cookieForHeader = new Dictionary<string, string>
+                
+                /*_cookieForHeader = new Dictionary<CookieContainer>
                 {
-                    {"LSID=DQAAAK…Eaem_vYg","Path =/ accounts; Expires = Wed, 13 Jan 2021 22:23:01 GMT; Secure; HttpOnly" }
-                };
+                    new Cooki"LSID=DQAAAK…Eaem_vYg","Path =/ accounts; Expires = Wed, 13 Jan 2021 22:23:01 GMT; Secure; HttpOnly"
+                };*/
+
                 _responseHeader = new Dictionary<string, string>
                 {
                     {$"HTTP/1.1 {(StatusCodeData.ContainsKey(StatusCode) ? StatusCodeData[StatusCode] : StatusCode.ToString())}", null },
@@ -203,6 +205,7 @@ namespace MiCore
                     _responseHeader.Add("Content-Type", MimeTypeMapData.ContainsKey(ContentFileExtention) ? MimeTypeMapData[ContentFileExtention] : "application/octet-stream");
                     _responseHeader.Add("Content-Length", Content.Length.ToString());
                 }
+
                 _responseHeader.Add("Connection", "Closed");
 
                 IEnumerable<byte> retBytes = Encoding.UTF8.GetBytes(_responseHeader.Aggregate("", (current, header) => current + header.Key + (header.Value != null ? $":{header.Value}" : "") + "\r\n"));
