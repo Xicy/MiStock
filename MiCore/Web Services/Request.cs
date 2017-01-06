@@ -13,7 +13,7 @@ namespace MiCore
             public string Method => Data["method"];
             public string Path => Data["path"].Substring(0, Data["path"].Length - 9);
             public string Content => Data.ContainsKey("content-length") ? _data.Substring(_data.Length - int.Parse(Data["content-length"]), int.Parse(Data["content-length"])) : "";
-
+            public CookieCollection Cookies => Data.ContainsKey("cookie") ? CookieCollection.ToCookieCollection(Data["cookie"]) : null;
             public Request(string data)
             {
                 Data = new Dictionary<string, string>();
