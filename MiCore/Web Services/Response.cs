@@ -143,7 +143,7 @@ namespace MiCore
             public string ContentFileExtention;
             public short StatusCode;
             private IDictionary<string, string> _responseHeader;
-            //private IDictionary<CookieContainer> _cookieForHeader;
+            private CookieCollection _cookies;
 
             public Response(short statusCode)
             {
@@ -181,11 +181,8 @@ namespace MiCore
                 StatusCode = statusCode;
                 Content = content;
                 ContentFileExtention = contentFileExtention;
-                
-                /*_cookieForHeader = new Dictionary<CookieContainer>
-                {
-                    new Cooki"LSID=DQAAAK…Eaem_vYg","Path =/ accounts; Expires = Wed, 13 Jan 2021 22:23:01 GMT; Secure; HttpOnly"
-                };*/
+
+                _cookies = new CookieCollection();
 
                 _responseHeader = new Dictionary<string, string>
                 {
@@ -197,9 +194,18 @@ namespace MiCore
                 };
             }
 
-            //TODO:Response - Add header - add and remove cookie
+            public void AddCookie(CookieContainer cookie)
+            {
+                _cookies.Add(cookie);
+            }
+
             public byte[] ResponseData()
             {
+                if (!_cookies.IsNull())
+                {
+                    _responseHeader.Add(_cookies.ToResponseData(), null);
+                }
+
                 if (Content != null && Content.Length > 0)
                 {
                     _responseHeader.Add("Content-Type", MimeTypeMapData.ContainsKey(ContentFileExtention) ? MimeTypeMapData[ContentFileExtention] : "application/octet-stream");
@@ -208,7 +214,8 @@ namespace MiCore
 
                 _responseHeader.Add("Connection", "Closed");
 
-                IEnumerable<byte> retBytes = Encoding.UTF8.GetBytes(_responseHeader.Aggregate("", (current, header) => current + header.Key + (header.Value != null ? $":{header.Value}" : "") + "\r\n"));
+                IEnumerable<byte> retBytes = Encoding.UTF8.GetBytes(_responseHeader.Aggregate("", (current, header) => current + header.Key + (header.Value != null ? $":{header.Value}" : "") + Environment.NewLine));
+
 
                 if (Content != null && Content.Length > 0)
                 {
