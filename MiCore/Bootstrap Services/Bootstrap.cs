@@ -34,12 +34,7 @@ namespace MiCore
         {
             try
             {
-                var testCookie = WebSocket.CookieContainer.ToCookie("LSID=DQAAAK…Eaem_vYg; ID=sabri; Path=/accounts; Max-Age=1200; Expires=Thu, 14 Jan 2016 00:23:01 GMT; Secure; HttpOnly; Test=sa; k=1");
-                
-                var Server1 = new WebSocket(8080);
-                var Server2 = new WebSocket(8081);
-                Server1.StartAsync();
-                Server2.StartAsync();
+                new WebSocket(8080).StartAsync();
             }
             catch (Exception e)
             {
