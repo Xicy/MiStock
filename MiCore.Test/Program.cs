@@ -10,11 +10,8 @@ namespace Test
         public static void Main(string[] args)
         {
             Logger.Log.AddDiskService(new Logger.DiskFile($@"Log.{DateTime.Now:yy.MM.dd}.txt"));
-            
-            Logger.Log.Debug("Program.Main", "Test");
-            Logger.Log.Info("Program.Main", "Test");
-            Logger.Log.Error("Program.Main", "Test");
-            Logger.Log.Warn("Program.Main", "Test");
+
+            Logger.Log.Info("Startup", "\n __  __  ____   ___  _____  ____  ____ \r\n(  \\/  )(_  _) / __)(  _  )(  _ \\( ___)\r\n )    (  _)(_ ( (__  )(_)(  )   / )__) \r\n(_/\\/\\_)(____) \\___)(_____)(_)\\_)(____)\n");
 
             Bootstrap.Start();
 
