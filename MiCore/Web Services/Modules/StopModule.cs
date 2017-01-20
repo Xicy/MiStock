@@ -8,9 +8,11 @@ namespace MiCore
         public class StopModule : IWebModule
         {
             public string RegexPath => @"^\/stop$";
+            public Match Match { set; get; }
             public Response Execute(WebSocket socket, Request request)
             {
                 socket.Stop();
+                Logger.Log.Info("MiCore.WebSocket.StopModule", "Server Down");
                 return new Response(404);
             }
         }
