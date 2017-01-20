@@ -13,7 +13,7 @@ namespace MiCore
     internal partial class WebSocket
     {
         private const string SourceName = "MiCore.WebSocket";
-        private const int ByteCount = 1024 * 64; //8 Byte
+        private const int ByteCount = 1024 * 8; //8 KByte
 
         #region ModuleLoader
         private static List<IWebModule> _modules;
@@ -38,8 +38,10 @@ namespace MiCore
         {
             foreach (var module in Modules)
             {
-                if (new Regex(module.RegexPath).Match(regex).Success)
+                var reg = new Regex(module.RegexPath).Match(regex);
+                if (reg.Success)
                 {
+                    module.Match = reg;
                     return module;
                 }
             }
@@ -70,6 +72,8 @@ namespace MiCore
             {
                 _working = true;
                 _tcpListener = new TcpListener(_ip, _port);
+                _tcpListener.Server.ReceiveBufferSize = ByteCount;
+                _tcpListener.Server.SendBufferSize = ByteCount;
                 var serverAddress = (IPEndPoint)_tcpListener.LocalEndpoint;
 
                 _tcpListener.Start();
@@ -101,17 +105,37 @@ namespace MiCore
                 {
                     using (var networkStream = tcpClient.GetStream())
                     {
-                        var buffer = new byte[ByteCount];
+                        var buffer = Enumerable.Empty<byte>();
                         Logger.Log.Info(SourceName, "Reading from client({0})", clientAddress.Address);
-                        var byteCount = await networkStream.ReadAsync(buffer, 0, buffer.Length);
-                        
-                        var request = new Request(Encoding.UTF8.GetString(buffer, 0, byteCount));
+
+                        if (!networkStream.DataAvailable)
+                        {
+                            await networkStream.FlushAsync();
+                            Logger.Log.Warn(SourceName,"Network data is not available");
+                            continue;
+                        }
+
+                        while (networkStream.DataAvailable)
+                        {
+                            var bufferTmp = new byte[ByteCount];
+                            var contentSize = await networkStream.ReadAsync(bufferTmp, 0, bufferTmp.Length);
+                            buffer = buffer.Concat(bufferTmp.Take(contentSize));
+                        }
+
+                        var request = new Request(ref buffer);
+
                         Logger.Log.Debug(SourceName, "Client({0}) wrote \n{1}", clientAddress.Address, request);
 
                         var serverResponseBytes = GetModule(request.Path).Execute(this, request).ResponseData();
+                        var serverResponseBytesSize = serverResponseBytes.Count();
 
-                        await networkStream.WriteAsync(serverResponseBytes, 0, serverResponseBytes.Length);
+                        for (var count = serverResponseBytesSize; count > 0; count -= ByteCount)
+                        {
+                          await networkStream.WriteAsync(serverResponseBytes.Skip(serverResponseBytesSize - count).Take(count).ToArray(), 0, count);
+                        }
+
                     }
+
                 }
                 catch (Exception e)
                 {
