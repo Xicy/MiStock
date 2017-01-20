@@ -1,0 +1,17 @@
+﻿https://tools.ietf.org/html/rfc2616
+
+HTTP-Version   = "HTTP" "/" 1*DIGIT "." 1*DIGIT									HTTP/1.1
+Time -> ToString("r")
+
+Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
+
+		Method        = "OPTIONS"                ; Section 9.2
+                      | "GET"                    ; Section 9.3
+                      | "HEAD"                   ; Section 9.4
+                      | "POST"                   ; Section 9.5
+                      | "PUT"                    ; Section 9.6
+                      | "DELETE"                 ; Section 9.7
+                      | "TRACE"                  ; Section 9.8
+                      | "CONNECT"                ; Section 9.9
+                      | extension-method
+       extension-method = token
