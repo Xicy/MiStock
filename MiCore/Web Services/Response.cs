@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Text;
 
 namespace MiCore
@@ -83,63 +82,64 @@ namespace MiCore
 
             private static readonly IDictionary<string, string> MimeTypeMapData = new Dictionary<string, string> { 
                 #region MIME type list
-        {".asf", "video/x-ms-asf"},
-        {".asx", "video/x-ms-asf"},
-        {".avi", "video/x-msvideo"},
-        {".cco", "application/x-cocoa"},
-        {".crt", "application/x-x509-ca-cert"},
-        {".css", "text/css"},
-        {".der", "application/x-x509-ca-cert"},
-        {".ear", "application/java-archive"},
-        {".flv", "video/x-flv"},
-        {".gif", "image/gif"},
-        {".hqx", "application/mac-binhex40"},
-        {".htc", "text/x-component"},
-        {".htm", "text/html"},
-        {".html", "text/html"},
-        {".ico", "image/x-icon"},
-        {".jar", "application/java-archive"},
-        {".jardiff", "application/x-java-archive-diff"},
-        {".jng", "image/x-jng"},
-        {".jnlp", "application/x-java-jnlp-file"},
-        {".jpeg", "image/jpeg"},
-        {".jpg", "image/jpeg"},
-        {".js", "application/x-javascript"},
-        {".mml", "text/mathml"},
-        {".mng", "video/x-mng"},
-        {".mov", "video/quicktime"},
-        {".mp3", "audio/mpeg"},
-        {".mpeg", "video/mpeg"},
-        {".mpg", "video/mpeg"},
-        {".pdb", "application/x-pilot"},
-        {".pdf", "application/pdf"},
-        {".pem", "application/x-x509-ca-cert"},
-        {".pl", "application/x-perl"},
-        {".pm", "application/x-perl"},
-        {".png", "image/png"},
-        {".prc", "application/x-pilot"},
-        {".ra", "audio/x-realaudio"},
-        {".rar", "application/x-rar-compressed"},
-        {".rpm", "application/x-redhat-package-manager"},
-        {".rss", "text/xml"},
-        {".run", "application/x-makeself"},
-        {".sea", "application/x-sea"},
-        {".shtml", "text/html"},
-        {".sit", "application/x-stuffit"},
-        {".swf", "application/x-shockwave-flash"},
-        {".tcl", "application/x-tcl"},
-        {".tk", "application/x-tcl"},
-        {".txt", "text/plain"},
-        {".war", "application/java-archive"},
-        {".wbmp", "image/vnd.wap.wbmp"},
-        {".wmv", "video/x-ms-wmv"},
-        {".xml", "text/xml"},
-        {".xpi", "application/x-xpinstall"},
-        {".zip", "application/zip"},
-        #endregion
+                {".asf", "video/x-ms-asf"},
+                {".asx", "video/x-ms-asf"},
+                {".avi", "video/x-msvideo"},
+                {".cco", "application/x-cocoa"},
+                {".crt", "application/x-x509-ca-cert"},
+                {".css", "text/css"},
+                {".der", "application/x-x509-ca-cert"},
+                {".ear", "application/java-archive"},
+                {".flv", "video/x-flv"},
+                {".gif", "image/gif"},
+                {".hqx", "application/mac-binhex40"},
+                {".htc", "text/x-component"},
+                {".htm", "text/html"},
+                {".html", "text/html"},
+                {".ico", "image/x-icon"},
+                {".jar", "application/java-archive"},
+                {".jardiff", "application/x-java-archive-diff"},
+                {".jng", "image/x-jng"},
+                {".jnlp", "application/x-java-jnlp-file"},
+                {".jpeg", "image/jpeg"},
+                {".jpg", "image/jpeg"},
+                {".js", "application/x-javascript"},
+                {".mml", "text/mathml"},
+                {".mng", "video/x-mng"},
+                {".mov", "video/quicktime"},
+                {".mp3", "audio/mpeg"},
+                {".mp4", "video/mpeg"},
+                {".mpeg", "video/mpeg"},
+                {".mpg", "video/mpeg"},
+                {".pdb", "application/x-pilot"},
+                {".pdf", "application/pdf"},
+                {".pem", "application/x-x509-ca-cert"},
+                {".pl", "application/x-perl"},
+                {".pm", "application/x-perl"},
+                {".png", "image/png"},
+                {".prc", "application/x-pilot"},
+                {".ra", "audio/x-realaudio"},
+                {".rar", "application/x-rar-compressed"},
+                {".rpm", "application/x-redhat-package-manager"},
+                {".rss", "text/xml"},
+                {".run", "application/x-makeself"},
+                {".sea", "application/x-sea"},
+                {".shtml", "text/html"},
+                {".sit", "application/x-stuffit"},
+                {".swf", "application/x-shockwave-flash"},
+                {".tcl", "application/x-tcl"},
+                {".tk", "application/x-tcl"},
+                {".txt", "text/plain"},
+                {".war", "application/java-archive"},
+                {".wbmp", "image/vnd.wap.wbmp"},
+                {".wmv", "video/x-ms-wmv"},
+                {".xml", "text/xml"},
+                {".xpi", "application/x-xpinstall"},
+                {".zip", "application/zip"},
+                #endregion
             };
 
-            public byte[] Content;
+            public IEnumerable<byte> Content;
             public string ContentFileExtention;
             public short StatusCode;
             private IDictionary<string, string> _responseHeader;
@@ -147,7 +147,7 @@ namespace MiCore
 
             public Response(short statusCode)
             {
-                Initalize(statusCode, null, null);
+                Initalize(statusCode, Enumerable.Empty<byte>(), null);
             }
 
             public Response(FileStream fileStream)
@@ -166,17 +166,17 @@ namespace MiCore
                 }
             }
 
-            public Response(short statusCode, byte[] content, string contentFileExtention)
+            public Response(short statusCode, IEnumerable<byte> content, string contentFileExtention)
             {
                 Initalize(statusCode, content, contentFileExtention);
             }
 
-            public Response(byte[] content, string contentFileExtention)
+            public Response(IEnumerable<byte> content, string contentFileExtention)
             {
                 Initalize(200, content, contentFileExtention);
             }
 
-            private void Initalize(short statusCode, byte[] content, string contentFileExtention)
+            private void Initalize(short statusCode,IEnumerable<byte> content, string contentFileExtention)
             {
                 StatusCode = statusCode;
                 Content = content;
@@ -199,30 +199,32 @@ namespace MiCore
                 _cookies.Add(cookie);
             }
 
-            public byte[] ResponseData()
+            public IEnumerable<byte> ResponseData()
             {
                 if (!_cookies.IsNull())
                 {
                     _responseHeader.Add(_cookies.ToResponseData(), null);
                 }
 
-                if (Content != null && Content.Length > 0)
+                var contentLen = Content.Count();
+
+                if (Content != null && contentLen > 0)
                 {
                     _responseHeader.Add("Content-Type", MimeTypeMapData.ContainsKey(ContentFileExtention) ? MimeTypeMapData[ContentFileExtention] : "application/octet-stream");
-                    _responseHeader.Add("Content-Length", Content.Length.ToString());
+                    _responseHeader.Add("Content-Length", contentLen.ToString());
                 }
 
-                _responseHeader.Add("Connection", "Closed");
+                _responseHeader.Add("Connection", "Keep-Alive");
 
                 IEnumerable<byte> retBytes = Encoding.UTF8.GetBytes(_responseHeader.Aggregate("", (current, header) => current + header.Key + (header.Value != null ? $":{header.Value}" : "") + Environment.NewLine));
 
 
-                if (Content != null && Content.Length > 0)
+                if (Content != null && contentLen > 0)
                 {
                     retBytes = retBytes.Concat(Encoding.UTF8.GetBytes("\r\n")).Concat(Content);
                 }
 
-                return retBytes.ToArray();
+                return retBytes;
             }
         }
     }
