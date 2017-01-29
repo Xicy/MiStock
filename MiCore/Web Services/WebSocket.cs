@@ -79,7 +79,7 @@ namespace MiCore
                 _tcpListener.Start();
                 Logger.Log.Info(SourceName, $"Started on {serverAddress.Address}:{serverAddress.Port}");
 
-                await ListenAsync();
+                await AcceptAsync();
             }
             catch (Exception e)
             {
@@ -93,54 +93,58 @@ namespace MiCore
             _tcpListener.Stop();
         }
 
-        private async Task ListenAsync()
+        private async Task AcceptAsync()
         {
             while (_working)
             {
                 var tcpClient = await _tcpListener.AcceptTcpClientAsync();
                 var clientAddress = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
                 Logger.Log.Info(SourceName, "Client({0}) has connected", clientAddress.Address);
+                Task.Factory.StartNew(() => ListenAsync(tcpClient, clientAddress));
+            }
+        }
 
-                try
+        private async Task ListenAsync(TcpClient tcpClient, IPEndPoint clientAddress)
+        {
+            try
+            {
+                using (var networkStream = tcpClient.GetStream())
                 {
-                    using (var networkStream = tcpClient.GetStream())
+                    var buffer = Enumerable.Empty<byte>();
+                    Logger.Log.Info(SourceName, "Reading from client({0})", clientAddress.Address);
+
+                    if (!networkStream.DataAvailable)
                     {
-                        var buffer = Enumerable.Empty<byte>();
-                        Logger.Log.Info(SourceName, "Reading from client({0})", clientAddress.Address);
+                        await networkStream.FlushAsync();
+                        Logger.Log.Warn(SourceName, "Network data is not available");
+                        return;
+                    }
 
-                        if (!networkStream.DataAvailable)
-                        {
-                            await networkStream.FlushAsync();
-                            Logger.Log.Warn(SourceName,"Network data is not available");
-                            continue;
-                        }
+                    while (networkStream.DataAvailable)
+                    {
+                        var bufferTmp = new byte[ByteCount];
+                        var contentSize = await networkStream.ReadAsync(bufferTmp, 0, bufferTmp.Length);
+                        buffer = buffer.Concat(bufferTmp.Take(contentSize));
+                    }
 
-                        while (networkStream.DataAvailable)
-                        {
-                            var bufferTmp = new byte[ByteCount];
-                            var contentSize = await networkStream.ReadAsync(bufferTmp, 0, bufferTmp.Length);
-                            buffer = buffer.Concat(bufferTmp.Take(contentSize));
-                        }
+                    var request = new Request(ref buffer);
 
-                        var request = new Request(ref buffer);
+                    Logger.Log.Debug(SourceName, "Client({0}) wrote \n{1}", clientAddress.Address, request);
 
-                        Logger.Log.Debug(SourceName, "Client({0}) wrote \n{1}", clientAddress.Address, request);
+                    var serverResponseBytes = GetModule(request.Path).Execute(this, request).ResponseData();
+                    var serverResponseBytesSize = serverResponseBytes.Count();
 
-                        var serverResponseBytes = GetModule(request.Path).Execute(this, request).ResponseData();
-                        var serverResponseBytesSize = serverResponseBytes.Count();
-
-                        for (var count = serverResponseBytesSize; count > 0; count -= ByteCount)
-                        {
-                          await networkStream.WriteAsync(serverResponseBytes.Skip(serverResponseBytesSize - count).Take(count).ToArray(), 0, count);
-                        }
-
+                    for (var count = serverResponseBytesSize; count > 0; count -= ByteCount)
+                    {
+                        networkStream.Write(serverResponseBytes.Skip(serverResponseBytesSize - count).Take(count).ToArray(), 0, count);
                     }
 
                 }
-                catch (Exception e)
-                {
-                    Logger.Log.Error(SourceName, "Client({0}) \n{1}", clientAddress.Address, e);
-                }
+
+            }
+            catch (Exception e)
+            {
+                Logger.Log.Error(SourceName, "Client({0}) \n{1}", clientAddress.Address, e);
             }
         }
     }
