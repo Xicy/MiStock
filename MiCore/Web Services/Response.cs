@@ -149,7 +149,8 @@ namespace MiCore
             {
                 Initalize(statusCode, Enumerable.Empty<byte>(), null);
             }
-
+            
+            /* TODO: File Response
             public Response(FileStream fileStream)
             {
                 using (var bin = new BinaryReader(fileStream))
@@ -165,6 +166,7 @@ namespace MiCore
                     Initalize(statusCode, bin.ReadBytes((int)bin.BaseStream.Length), Path.GetExtension(fileStream.Name));
                 }
             }
+            */
 
             public Response(short statusCode, IEnumerable<byte> content, string contentFileExtention)
             {
