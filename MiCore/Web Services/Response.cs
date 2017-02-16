@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace MiCore
 {
@@ -139,49 +139,25 @@ namespace MiCore
                 #endregion
             };
 
-            public IEnumerable<byte> Content;
+
             public string ContentFileExtention;
             public short StatusCode;
+
             private IDictionary<string, string> _responseHeader;
             private CookieCollection _cookies;
+            private BufferedStream ContentStream;
 
-            public Response(short statusCode)
+
+            public Response(Stream stream)
             {
-                Initalize(statusCode, Enumerable.Empty<byte>(), null);
-            }
-            
-            /* TODO: File Response
-            public Response(FileStream fileStream)
-            {
-                using (var bin = new BinaryReader(fileStream))
-                {
-                    Initalize(200, bin.ReadBytes((int)bin.BaseStream.Length), Path.GetExtension(fileStream.Name));
-                }
+                ContentStream = new BufferedStream(stream, BufferSize);
+                //TODO: daha dogrusunu yap :D
+                Initalize(200,"");
             }
 
-            public Response(short statusCode, FileStream fileStream)
-            {
-                using (var bin = new BinaryReader(fileStream))
-                {
-                    Initalize(statusCode, bin.ReadBytes((int)bin.BaseStream.Length), Path.GetExtension(fileStream.Name));
-                }
-            }
-            */
-
-            public Response(short statusCode, IEnumerable<byte> content, string contentFileExtention)
-            {
-                Initalize(statusCode, content, contentFileExtention);
-            }
-
-            public Response(IEnumerable<byte> content, string contentFileExtention)
-            {
-                Initalize(200, content, contentFileExtention);
-            }
-
-            private void Initalize(short statusCode,IEnumerable<byte> content, string contentFileExtention)
+            private void Initalize(short statusCode, string contentFileExtention)
             {
                 StatusCode = statusCode;
-                Content = content;
                 ContentFileExtention = contentFileExtention;
 
                 _cookies = new CookieCollection();
@@ -194,6 +170,13 @@ namespace MiCore
                     {"Server",  typeof(Bootstrap).Namespace},
                     {"Access-Control-Allow-Origin","*" }
                 };
+
+                if (ContentStream.CanRead && ContentStream.CanSeek && ContentStream.Length > 0)
+                {
+                    _responseHeader.Add("Content-Type", MimeTypeMapData.ContainsKey(ContentFileExtention) ? MimeTypeMapData[ContentFileExtention] : "application/octet-stream");
+                    _responseHeader.Add("Content-Length", ContentStream.Length.ToString());
+                }
+
             }
 
             public void AddCookie(CookieContainer cookie)
@@ -201,33 +184,48 @@ namespace MiCore
                 _cookies.Add(cookie);
             }
 
-            public IEnumerable<byte> ResponseData()
+            public void SendResponseData(Stream writerStream)
             {
                 if (!_cookies.IsNull())
                 {
                     _responseHeader.Add(_cookies.ToResponseData(), null);
                 }
 
-                var contentLen = Content.Count();
-
-                if (Content != null && contentLen > 0)
-                {
-                    _responseHeader.Add("Content-Type", MimeTypeMapData.ContainsKey(ContentFileExtention) ? MimeTypeMapData[ContentFileExtention] : "application/octet-stream");
-                    _responseHeader.Add("Content-Length", contentLen.ToString());
-                }
-
                 _responseHeader.Add("Connection", "Keep-Alive");
+                _responseHeader.Add("\r\n", null);
 
-                IEnumerable<byte> retBytes = Encoding.UTF8.GetBytes(_responseHeader.Aggregate("", (current, header) => current + header.Key + (header.Value != null ? $":{header.Value}" : "") + Environment.NewLine));
+                var retBytes = Encoding.UTF8.GetBytes(_responseHeader.Aggregate("", (current, header) => current + header.Key + (header.Value != null ? $":{header.Value}" : "") + Environment.NewLine)).ToArray();
 
+                writerStream.Write(retBytes,0,retBytes.Length);
 
-                if (Content != null && contentLen > 0)
+                while (ContentStream.Position < ContentStream.Length)
                 {
-                    retBytes = retBytes.Concat(Encoding.UTF8.GetBytes("\r\n")).Concat(Content);
+                    ContentStream.CopyTo(writerStream,BufferSize);
+                    Task.Delay(500);
                 }
-
-                return retBytes;
             }
+
+            #region Disposing
+
+            protected virtual void Dispose(bool disposing)
+            {
+                ContentStream.Dispose();
+                ContentFileExtention = null;
+                _cookies.Clear();
+                _responseHeader.Clear();
+            }
+
+            public void Dispose()
+            {
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+
+            ~Response()
+            {
+                Dispose(false);
+            }
+            #endregion
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -7,11 +8,9 @@ namespace MiCore
 {
     internal partial class WebSocket
     {
-        public class Request
+        public class Request : IDisposable
         {
-            //TODO:overwrite ToString()
             private string Header;
-
             public readonly Dictionary<string, string> Data;
             public string Method => Data["method"];
             public string Path => Data["path"];
@@ -56,8 +55,29 @@ namespace MiCore
                         default: Data.Add(match.Groups["Key"].Value.ToLowerInvariant(), match.Groups["Value"].Value); break;
                     }
                 }
+
             }
 
+            #region Disposing
+
+            protected virtual void Dispose(bool disposing)
+            {
+                Data.Clear();
+                Header = null;
+                Content = null;
+            }
+
+            public void Dispose()
+            {
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+            
+            ~Request()
+            {
+                Dispose(false);
+            }
+            #endregion
         }
     }
 }

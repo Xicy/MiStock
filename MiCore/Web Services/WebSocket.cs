@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -13,7 +13,7 @@ namespace MiCore
     internal partial class WebSocket
     {
         private const string SourceName = "MiCore.WebSocket";
-        private const int ByteCount = 1024 * 8; //8 KByte
+        private const int BufferSize = 1024 * 8; //8 KByte
 
         #region ModuleLoader
         private static List<IWebModule> _modules;
@@ -72,8 +72,8 @@ namespace MiCore
             {
                 _working = true;
                 _tcpListener = new TcpListener(_ip, _port);
-                _tcpListener.Server.ReceiveBufferSize = ByteCount;
-                _tcpListener.Server.SendBufferSize = ByteCount;
+                _tcpListener.Server.ReceiveBufferSize = BufferSize;
+                _tcpListener.Server.SendBufferSize = BufferSize;
                 var serverAddress = (IPEndPoint)_tcpListener.LocalEndpoint;
 
                 _tcpListener.Start();
@@ -109,41 +109,39 @@ namespace MiCore
             try
             {
                 using (var networkStream = tcpClient.GetStream())
+                using (var bufferedStream = new BufferedStream(networkStream, BufferSize))
                 {
                     var buffer = Enumerable.Empty<byte>();
                     Logger.Log.Info(SourceName, "Reading from client({0})", clientAddress.Address);
 
                     if (!networkStream.DataAvailable)
                     {
-                        await networkStream.FlushAsync();
+                        await bufferedStream.FlushAsync();
                         Logger.Log.Warn(SourceName, "Network data is not available");
                         return;
                     }
 
                     while (networkStream.DataAvailable)
                     {
-                        var bufferTmp = new byte[ByteCount];
-                        var contentSize = await networkStream.ReadAsync(bufferTmp, 0, bufferTmp.Length);
+                        var bufferTmp = new byte[BufferSize];
+                        var contentSize = await bufferedStream.ReadAsync(bufferTmp, 0, bufferTmp.Length);
                         buffer = buffer.Concat(bufferTmp.Take(contentSize));
                     }
 
                     var request = new Request(ref buffer);
-
                     Logger.Log.Debug(SourceName, "Client({0}) wrote \n{1}", clientAddress.Address, request);
-
-                    var serverResponseBytes = GetModule(request.Path).Execute(this, request).ResponseData();
-                    var serverResponseBytesSize = serverResponseBytes.Count();
-
-                    for (var count = serverResponseBytesSize; count > 0; count -= ByteCount)
-                    {
-                        networkStream.Write(serverResponseBytes.Skip(serverResponseBytesSize - count).Take(count).ToArray(), 0, count);
-                    }
-
+                    GetModule(request.Path).Execute(this, request).SendResponseData(bufferedStream);
                 }
 
             }
             catch (Exception e)
             {
+                var socketException = e.InnerException as SocketException;
+                if (socketException?.SocketErrorCode == SocketError.ConnectionReset)
+                {
+                    Logger.Log.Warn(SourceName, "Client({0}) \n{1}", clientAddress.Address, "Connection closed from client");
+                    return;
+                }
                 Logger.Log.Error(SourceName, "Client({0}) \n{1}", clientAddress.Address, e);
             }
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -7,10 +8,45 @@ namespace MiCore
 {
     internal partial class WebSocket
     {
-        public class CookieCollection
+        public class CookieCollection : ICollection<CookieContainer>
         {
             private IList<CookieContainer> _cookies;
-            public IEnumerable<CookieContainer> Cookies => _cookies;
+
+            public CookieContainer this[string Key]
+            {
+                set
+                {
+                    var first = _cookies.First(d => d.Key.ToLowerInvariant() == Key.ToLowerInvariant());
+                    if(first == null)
+                    {
+                        _cookies.Add(value);
+                    }
+                    else
+                    {
+                        first = value;
+                    }
+                }
+                get
+                {
+                    return _cookies.First(d => d.Key.ToLowerInvariant() == Key.ToLowerInvariant());
+                }               
+            }
+
+            public int Count
+            {
+                get
+                {
+                    return _cookies.Count;
+                }
+            }
+
+            public bool IsReadOnly
+            {
+                get
+                {
+                    return _cookies.IsReadOnly;
+                }
+            }
 
             public CookieCollection()
             {
@@ -54,9 +90,43 @@ namespace MiCore
 
             public string ToResponseData()
             {
-                return Cookies.Aggregate("", (current, pair) => current + pair.ToResponseData() + Environment.NewLine).TrimEnd('\r', '\n');
+                return _cookies.Aggregate("", (current, pair) => current + pair.ToResponseData() + Environment.NewLine).TrimEnd('\r', '\n');
             }
 
+            void ICollection<CookieContainer>.Add(CookieContainer item)
+            {
+                _cookies.Add(item);
+            }
+
+            public void Clear()
+            {
+                _cookies.Clear();
+            }
+
+            public bool Contains(CookieContainer item)
+            {
+                return _cookies.Contains(item);
+            }
+
+            public void CopyTo(CookieContainer[] array, int arrayIndex)
+            {
+                _cookies.CopyTo(array, arrayIndex);
+            }
+
+            public bool Remove(CookieContainer item)
+            {
+                return _cookies.Remove(item);
+            }
+
+            public IEnumerator<CookieContainer> GetEnumerator()
+            {
+                return _cookies.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return _cookies.GetEnumerator();
+            }
         }
     }
 }
