@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace MiCore
 {
@@ -8,34 +9,33 @@ namespace MiCore
         public static Logger Log = new Logger(
             new DiskConsole(
                 Level.All
-#if !DEBUG
-                    ^ Logger.Level.Debug
+#if !DEBUG 
+                ^ Logger.Level.Debug
 #endif
-            )
+            ).Write
         );
 
-        private readonly IList<IDiskServices> _disks;
-        public Logger(params IDiskServices[] disks)
+        public event Action<Level, string, object> Disks;
+
+        public Logger(params Action<Level, string, object>[] disks)
         {
-            _disks = new List<IDiskServices>();
             AddDiskService(disks);
         }
 
-        public void AddDiskService(params  IDiskServices[] disks)
+        private void AddDiskService(params Action<Level, string, object>[] disks)
         {
             foreach (var disk in disks)
             {
-                _disks.Add(disk);
-            }   
+                Disks += disk;
+            }
         }
 
-        private void Write(Level level, string source, object data)
+        private void Write(Level level, [CallerMemberName] string source = "", object data = null)
         {
-            foreach (var disk in _disks)
-                disk.Write(level, source, data);
+            Disks(level, source, data);
         }
 
-        public void Debug(string source, object data)
+        public void Debug(string source, object data = null)
         {
             Write(Level.Debug, source, data);
         }

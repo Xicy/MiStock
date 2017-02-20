@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace MiCore
 {
@@ -15,8 +16,20 @@ namespace MiCore
                 _visibiltLevel = visibiltLevel;
             }
 
-            public void ConsoleColorChanger(Level level, string source, string data)
+            public void Write(Level level, string source, object data)
             {
+                string write;
+
+                if (data is string)
+                {
+                    write = data.ToString();
+                }
+                else if (data is Exception)
+                {
+                    write = string.Format("{0}\r\n{1}", ((Exception)data).Message, ((Exception)data).StackTrace);
+                }
+                else throw new ArgumentOutOfRangeException(nameof(data), data, "data type do not support");
+
                 if ((_visibiltLevel & level) == 0) return;
                 lock (_lock)
                 {
@@ -28,26 +41,9 @@ namespace MiCore
                         case Logger.Level.Warn: Console.ForegroundColor = ConsoleColor.Yellow; break;
                         case Logger.Level.Error: Console.ForegroundColor = ConsoleColor.Red; break;
                     }
-                    Console.Write("[{0}] [{1}] [{2}] {3}{4}".Replace(' ', '\t'), DateTime.Now, level, source, data.Substring(0,Math.Min(MaxCharLenght, data.Length)), Environment.NewLine);
+                    Console.Write("[{0:HH:mm:ss.fff},{1:000},{2,-5},{3}] {4}{5}".Replace(' ', '\t'), DateTime.Now, Task.CurrentId??0, level, source, write.Substring(0, Math.Min(MaxCharLenght, write.Length)), Environment.NewLine);
                     Console.ForegroundColor = tempColor;
                 }
-            }
-
-            public void Write(Level level, string source, object data)
-            {
-                string write;
-
-                if (data is string)
-                {
-                    write = data.ToString();
-                }
-                else if (data is Exception)
-                {
-                    write = string.Format("{0}\r\n{1}", ((Exception) data).Message, ((Exception) data).StackTrace);
-                }
-                else throw new ArgumentOutOfRangeException(nameof(data), data, "data type do not support");
-
-                ConsoleColorChanger(level, source, write);
             }
         }
     }
