@@ -13,8 +13,7 @@ namespace MiCore
             {
                 socket.Stop();
                 Logger.Log.Info("MiCore.WebSocket.StopModule", "Server Down");
-                return null;
-                //return new Response(404);
+                return new Response().SetStatusCode(404);
             }
         }
     }
