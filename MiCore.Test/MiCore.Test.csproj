@@ -54,5 +54,16 @@
       <Name>MiCore</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Dlls\System.Console.dll" />
+    <Content Include="Dlls\System.IO.dll" />
+    <Content Include="Dlls\System.IO.FileSystem.dll" />
+    <Content Include="Dlls\System.Net.Security.dll" />
+    <Content Include="Dlls\System.Net.Sockets.dll" />
+    <Content Include="Dlls\System.Reflection.dll" />
+    <Content Include="Dlls\System.Runtime.dll" />
+    <Content Include="Dlls\System.Runtime.Extensions.dll" />
+    <Content Include="Dlls\System.Security.Cryptography.X509Certificates.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

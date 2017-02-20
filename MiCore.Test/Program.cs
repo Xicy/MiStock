@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Reflection;
 
 namespace Test
 {
@@ -13,10 +15,11 @@ namespace Test
         //TODO:Best Buffer 64*1024
         public static void Main(string[] args)
         {
-            Logger.Log.AddDiskService(new Logger.DiskFile($@"Log.{DateTime.Now:yy.MM.dd}.txt"));
+            Logger.Log.Disks += (new Logger.DiskFile($@"Log.{DateTime.Now:yy.MM.dd}.txt")).Write;
+
             Logger.Log.Info("Startup", "\n __  __  ____   ___  _____  ____  ____ \r\n(  \\/  )(_  _) / __)(  _  )(  _ \\( ___)\r\n )    (  _)(_ ( (__  )(_)(  )   / )__) \r\n(_/\\/\\_)(____) \\___)(_____)(_)\\_)(____)\n");
             Bootstrap.Start();
-
+            
             Console.ReadLine();
         }
     }
