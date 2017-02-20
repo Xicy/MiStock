@@ -82,60 +82,60 @@ namespace MiCore
 
             private static readonly IDictionary<string, string> MimeTypeMapData = new Dictionary<string, string> { 
                 #region MIME type list
-                {".asf", "video/x-ms-asf"},
-                {".asx", "video/x-ms-asf"},
-                {".avi", "video/x-msvideo"},
-                {".cco", "application/x-cocoa"},
-                {".crt", "application/x-x509-ca-cert"},
-                {".css", "text/css"},
-                {".der", "application/x-x509-ca-cert"},
-                {".ear", "application/java-archive"},
-                {".flv", "video/x-flv"},
-                {".gif", "image/gif"},
-                {".hqx", "application/mac-binhex40"},
-                {".htc", "text/x-component"},
-                {".htm", "text/html"},
-                {".html", "text/html"},
-                {".ico", "image/x-icon"},
-                {".jar", "application/java-archive"},
-                {".jardiff", "application/x-java-archive-diff"},
-                {".jng", "image/x-jng"},
-                {".jnlp", "application/x-java-jnlp-file"},
-                {".jpeg", "image/jpeg"},
-                {".jpg", "image/jpeg"},
-                {".js", "application/x-javascript"},
-                {".mml", "text/mathml"},
-                {".mng", "video/x-mng"},
-                {".mov", "video/quicktime"},
-                {".mp3", "audio/mpeg"},
-                {".mp4", "video/mpeg"},
-                {".mpeg", "video/mpeg"},
-                {".mpg", "video/mpeg"},
-                {".pdb", "application/x-pilot"},
-                {".pdf", "application/pdf"},
-                {".pem", "application/x-x509-ca-cert"},
-                {".pl", "application/x-perl"},
-                {".pm", "application/x-perl"},
-                {".png", "image/png"},
-                {".prc", "application/x-pilot"},
-                {".ra", "audio/x-realaudio"},
-                {".rar", "application/x-rar-compressed"},
-                {".rpm", "application/x-redhat-package-manager"},
-                {".rss", "text/xml"},
-                {".run", "application/x-makeself"},
-                {".sea", "application/x-sea"},
-                {".shtml", "text/html"},
-                {".sit", "application/x-stuffit"},
-                {".swf", "application/x-shockwave-flash"},
-                {".tcl", "application/x-tcl"},
-                {".tk", "application/x-tcl"},
-                {".txt", "text/plain"},
-                {".war", "application/java-archive"},
-                {".wbmp", "image/vnd.wap.wbmp"},
-                {".wmv", "video/x-ms-wmv"},
-                {".xml", "text/xml"},
-                {".xpi", "application/x-xpinstall"},
-                {".zip", "application/zip"},
+                {"asf", "video/x-ms-asf"},
+                {"asx", "video/x-ms-asf"},
+                {"avi", "video/x-msvideo"},
+                {"cco", "application/x-cocoa"},
+                {"crt", "application/x-x509-ca-cert"},
+                {"css", "text/css"},
+                {"der", "application/x-x509-ca-cert"},
+                {"ear", "application/java-archive"},
+                {"flv", "video/x-flv"},
+                {"gif", "image/gif"},
+                {"hqx", "application/mac-binhex40"},
+                {"htc", "text/x-component"},
+                {"htm", "text/html"},
+                {"html", "text/html"},
+                {"ico", "image/x-icon"},
+                {"jar", "application/java-archive"},
+                {"jardiff", "application/x-java-archive-diff"},
+                {"jng", "image/x-jng"},
+                {"jnlp", "application/x-java-jnlp-file"},
+                {"jpeg", "image/jpeg"},
+                {"jpg", "image/jpeg"},
+                {"js", "application/x-javascript"},
+                {"mml", "text/mathml"},
+                {"mng", "video/x-mng"},
+                {"mov", "video/quicktime"},
+                {"mp3", "audio/mpeg"},
+                {"mp4", "video/mpeg"},
+                {"mpeg", "video/mpeg"},
+                {"mpg", "video/mpeg"},
+                {"pdb", "application/x-pilot"},
+                {"pdf", "application/pdf"},
+                {"pem", "application/x-x509-ca-cert"},
+                {"pl", "application/x-perl"},
+                {"pm", "application/x-perl"},
+                {"png", "image/png"},
+                {"prc", "application/x-pilot"},
+                {"ra", "audio/x-realaudio"},
+                {"rar", "application/x-rar-compressed"},
+                {"rpm", "application/x-redhat-package-manager"},
+                {"rss", "text/xml"},
+                {"run", "application/x-makeself"},
+                {"sea", "application/x-sea"},
+                {"shtml", "text/html"},
+                {"sit", "application/x-stuffit"},
+                {"swf", "application/x-shockwave-flash"},
+                {"tcl", "application/x-tcl"},
+                {"tk", "application/x-tcl"},
+                {"txt", "text/plain"},
+                {"war", "application/java-archive"},
+                {"wbmp", "image/vnd.wap.wbmp"},
+                {"wmv", "video/x-ms-wmv"},
+                {"xml", "text/xml"},
+                {"xpi", "application/x-xpinstall"},
+                {"zip", "application/zip"},
                 #endregion
             };
 
@@ -145,23 +145,46 @@ namespace MiCore
 
             private IDictionary<string, string> _responseHeader;
             private CookieCollection _cookies;
-            private BufferedStream ContentStream;
+            private BufferedStream _contentStream;
 
-
-            public Response(Stream stream)
+            public Response()
             {
-                ContentStream = new BufferedStream(stream, BufferSize);
-                //TODO: daha dogrusunu yap :D
-                Initalize(200,"");
+                _cookies = new CookieCollection();
             }
 
-            private void Initalize(short statusCode, string contentFileExtention)
+            public Response SetContent(Stream stream)
+            {
+                if (stream == null)
+                    throw new ArgumentNullException(nameof(stream));
+
+                _contentStream = new BufferedStream(stream, BufferSize);
+                if (stream is FileStream)
+                {
+                    SetFileExtention(Path.GetExtension(((FileStream)stream).Name).TrimStart('.'));
+                }
+                return this;
+            }
+
+            public Response SetStatusCode(short statusCode)
             {
                 StatusCode = statusCode;
+                return this;
+            }
+
+            public Response SetFileExtention(string contentFileExtention)
+            {
                 ContentFileExtention = contentFileExtention;
+                return this;
+            }
 
-                _cookies = new CookieCollection();
+            public Response AddCookie(CookieContainer cookie)
+            {
+                _cookies.Add(cookie);
+                return this;
+            }
 
+            public void SendResponseData(Stream writerStream)
+            {
                 _responseHeader = new Dictionary<string, string>
                 {
                     {$"HTTP/1.1 {(StatusCodeData.ContainsKey(StatusCode) ? StatusCodeData[StatusCode] : StatusCode.ToString())}", null },
@@ -171,37 +194,30 @@ namespace MiCore
                     {"Access-Control-Allow-Origin","*" }
                 };
 
-                if (ContentStream.CanRead && ContentStream.CanSeek && ContentStream.Length > 0)
+                if (_contentStream != null && _contentStream.CanRead && _contentStream.CanSeek && _contentStream.Length > 0)
                 {
                     _responseHeader.Add("Content-Type", MimeTypeMapData.ContainsKey(ContentFileExtention) ? MimeTypeMapData[ContentFileExtention] : "application/octet-stream");
-                    _responseHeader.Add("Content-Length", ContentStream.Length.ToString());
+                    _responseHeader.Add("Content-Length", _contentStream.Length.ToString());
                 }
 
-            }
-
-            public void AddCookie(CookieContainer cookie)
-            {
-                _cookies.Add(cookie);
-            }
-
-            public void SendResponseData(Stream writerStream)
-            {
                 if (!_cookies.IsNull())
                 {
                     _responseHeader.Add(_cookies.ToResponseData(), null);
                 }
 
                 _responseHeader.Add("Connection", "Keep-Alive");
-                _responseHeader.Add("\r\n", null);
+                _responseHeader.Add(String.Empty, null);
 
                 var retBytes = Encoding.UTF8.GetBytes(_responseHeader.Aggregate("", (current, header) => current + header.Key + (header.Value != null ? $":{header.Value}" : "") + Environment.NewLine)).ToArray();
 
-                writerStream.Write(retBytes,0,retBytes.Length);
+                writerStream.Write(retBytes, 0, retBytes.Length);
 
-                while (ContentStream.Position < ContentStream.Length)
+                byte[] buffer = new byte[BufferSize];
+                while (_contentStream != null && _contentStream.Position < _contentStream.Length)
                 {
-                    ContentStream.CopyTo(writerStream,BufferSize);
-                    Task.Delay(500);
+                    var readedSize = _contentStream.Read(buffer, 0, BufferSize);
+                    writerStream.Write(buffer, 0, readedSize);
+                    Task.Delay(1).Wait();
                 }
             }
 
@@ -209,7 +225,7 @@ namespace MiCore
 
             protected virtual void Dispose(bool disposing)
             {
-                ContentStream.Dispose();
+                _contentStream?.Dispose();
                 ContentFileExtention = null;
                 _cookies.Clear();
                 _responseHeader.Clear();

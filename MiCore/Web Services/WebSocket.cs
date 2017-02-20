@@ -13,7 +13,8 @@ namespace MiCore
     internal partial class WebSocket
     {
         private const string SourceName = "MiCore.WebSocket";
-        private const int BufferSize = 1024 * 8; //8 KByte
+        private const int BufferSize = 1024 * 256; //8 KByte
+        private const long MaxFileSize = 1024 * 1024;//1 Mbyte
 
         #region ModuleLoader
         private static List<IWebModule> _modules;
@@ -90,59 +91,71 @@ namespace MiCore
         public void Stop()
         {
             _working = false;
-            _tcpListener.Stop();
         }
 
         private async Task AcceptAsync()
         {
             while (_working)
             {
-                var tcpClient = await _tcpListener.AcceptTcpClientAsync();
-                var clientAddress = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
-                Logger.Log.Info(SourceName, "Client({0}) has connected", clientAddress.Address);
-                Task.Factory.StartNew(() => ListenAsync(tcpClient, clientAddress));
+                var taskClient = await _tcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
+                var clientAddress = (IPEndPoint)taskClient.Client.RemoteEndPoint;
+                Task.Factory.StartNew(() => Listen(taskClient, clientAddress));
             }
+            _tcpListener.Stop();
         }
 
-        private async Task ListenAsync(TcpClient tcpClient, IPEndPoint clientAddress)
+        private void Listen(TcpClient tcpClient, IPEndPoint clientAddress)
         {
-            try
+            Logger.Log.Info(SourceName, "Client({0}) has connected", clientAddress.Address);
+            using (var bufferedStream = new BufferedStream(tcpClient.GetStream(), BufferSize))
+            using (var buffer = new MemoryStream())
             {
-                using (var networkStream = tcpClient.GetStream())
-                using (var bufferedStream = new BufferedStream(networkStream, BufferSize))
-                {
-                    var buffer = Enumerable.Empty<byte>();
-                    Logger.Log.Info(SourceName, "Reading from client({0})", clientAddress.Address);
+                var bufferTmp = new byte[BufferSize];
+                Logger.Log.Info(SourceName, "Reading from client({0})", clientAddress.Address);
 
-                    if (!networkStream.DataAvailable)
+                try
+                {
+                    if (tcpClient.Available == 0)
                     {
-                        await bufferedStream.FlushAsync();
+                        bufferedStream.Flush();
                         Logger.Log.Warn(SourceName, "Network data is not available");
                         return;
                     }
 
-                    while (networkStream.DataAvailable)
+                    while (tcpClient.Available != 0)
                     {
-                        var bufferTmp = new byte[BufferSize];
-                        var contentSize = await bufferedStream.ReadAsync(bufferTmp, 0, bufferTmp.Length);
-                        buffer = buffer.Concat(bufferTmp.Take(contentSize));
+                        var contentSize = bufferedStream.Read(bufferTmp, 0, BufferSize);
+                        buffer.Write(bufferTmp, 0, contentSize);
+                        if (buffer.Length > MaxFileSize)
+                        {
+                            //TODO: Max File Size Error Page Response
+                            Logger.Log.Warn(SourceName, "Client({0}) send bigger than {1}KB data", clientAddress.Address,
+                                MaxFileSize);
+                            return;
+                        }
                     }
 
-                    var request = new Request(ref buffer);
+                    var request = new Request(buffer);
                     Logger.Log.Debug(SourceName, "Client({0}) wrote \n{1}", clientAddress.Address, request);
                     GetModule(request.Path).Execute(this, request).SendResponseData(bufferedStream);
                 }
-
-            }
-            catch (Exception e)
-            {
-                var socketException = e.InnerException as SocketException;
-                if (socketException?.SocketErrorCode == SocketError.ConnectionReset)
+                catch (Exception e)
                 {
-                    Logger.Log.Warn(SourceName, "Client({0}) \n{1}", clientAddress.Address, "Connection closed from client");
-                    return;
+                    var socketException = e.InnerException as SocketException;
+                    if (socketException != null)
+                    {
+                        if (socketException.SocketErrorCode == SocketError.ConnectionReset ||
+                            socketException.SocketErrorCode == SocketError.ConnectionAborted ||
+                            socketException.SocketErrorCode == SocketError.ConnectionRefused)
+                        {
+                            Logger.Log.Warn(SourceName, "Connection closed from Client({0}) \n{1}",
+                                clientAddress.Address, null);
+                            return;
+                        }
+                    }
+
+                    Logger.Log.Error(SourceName, "Client({0}) \n{1}", clientAddress.Address, e);
                 }
-                Logger.Log.Error(SourceName, "Client({0}) \n{1}", clientAddress.Address, e);
             }
         }
     }
