@@ -28,7 +28,7 @@ namespace MiCore
                 }
                 get
                 {
-                    return _cookies.First(d => d.Key.ToLowerInvariant() == Key.ToLowerInvariant());
+                    return _cookies.FirstOrDefault(d => d.Key.ToLowerInvariant() == Key.ToLowerInvariant());
                 }               
             }
 
@@ -106,6 +106,11 @@ namespace MiCore
             public bool Contains(CookieContainer item)
             {
                 return _cookies.Contains(item);
+            }
+
+            public bool Contains(string key)
+            {
+                return _cookies.Any(c=>c.Key == key);
             }
 
             public void CopyTo(CookieContainer[] array, int arrayIndex)

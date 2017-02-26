@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -136,8 +137,12 @@ namespace MiCore
                     }
 
                     var request = new Request(buffer);
+                    var response = GetModule(request.Path).Execute(this, request);
+                    if (!request.Cookies.Contains("Session"))
+                        response.AddCookie(new CookieContainer("Session", Guid.NewGuid().ToString()));
+
                     Logger.Log.Debug(SourceName, "Client({0}) wrote \n{1}", clientAddress.Address, request);
-                    GetModule(request.Path).Execute(this, request).SendResponseData(bufferedStream);
+                    response.SendResponseData(bufferedStream);
                 }
                 catch (Exception e)
                 {

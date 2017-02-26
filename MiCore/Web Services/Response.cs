@@ -217,7 +217,7 @@ namespace MiCore
                 {
                     var readedSize = _contentStream.Read(buffer, 0, BufferSize);
                     writerStream.Write(buffer, 0, readedSize);
-                    Task.Delay(1).Wait();
+                    Task.Delay(100).Wait();
                 }
             }
 

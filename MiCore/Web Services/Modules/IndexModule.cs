@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -15,7 +16,7 @@ namespace MiCore
                 var response = new Response();
                 response.SetStatusCode(200);
                 response.SetFileExtention("html");
-                response.SetContent(new MemoryStream(Encoding.UTF8.GetBytes("<!DOCTYPE html>\r\n<html>\r\n<body>\r\n\r\n<h1>My First Heading</h1>\r\n<p>My first paragraph.</p>\r\n\r\n</body>\r\n</html>")));
+                response.SetContent(new MemoryStream(Encoding.UTF8.GetBytes($"<!DOCTYPE html>\r\n<html>\r\n<body>\r\n\r\n<h1>My First Heading</h1>\r\n<p>My first paragraph.</p><p>Your Session : {request.Cookies["Session"]?.Value}</p>\r\n\r\n</body>\r\n</html>")));
                 return response;
             }
         }

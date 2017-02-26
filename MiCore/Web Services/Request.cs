@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -14,7 +15,7 @@ namespace MiCore
             public string Method => Data["method"];
             public string Path => Data["path"];
             public byte[] Content;
-            public CookieCollection Cookies => Data.ContainsKey("cookie") ? CookieCollection.ToCookieCollection(Data["cookie"]) : null;
+            public CookieCollection Cookies => Data.ContainsKey("cookie") ? CookieCollection.ToCookieCollection(Data["cookie"]) : new CookieCollection();
 
             public Request(Stream data)
             {
@@ -51,6 +52,11 @@ namespace MiCore
                     }
                 }
 
+            }
+
+            public override string ToString()
+            {
+                return Data.Aggregate("", (current, header) => current + header.Key + (header.Value != null ? $":{header.Value}" : "") + Environment.NewLine);
             }
 
             #region Disposing
